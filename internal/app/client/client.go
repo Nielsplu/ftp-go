@@ -7,16 +7,16 @@ import (
 
 func Run(remote string) {
 
-	c, e := net.Dial("tcp", remote)
-	if e != nil {
-		slog.Error(e.Error())
+	conn , err := net.Dial("tcp", remote)
+	if err != nil {
+		slog.Error(err.Error())
 		return
 	}
 	defer func() {
-		c.Close()
+		conn.Close()
 		slog.Debug("Connection closed")
 	}()
-	slog.Info("Connected to " + c.RemoteAddr().String())
+	slog.Info("Connected to " + conn.RemoteAddr().String())
 
-	return
+	
 }
