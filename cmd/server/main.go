@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log/slog"
-
 	"gitlab.univ-nantes.fr/iutna.info2.r305/proj/internal/app/server"
 )
 

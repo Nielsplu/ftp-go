@@ -3,34 +3,52 @@ package server
 import (
 	"log/slog"
 	"net"
-	"time"
 )
 
-func RunServer(port *string) {
+func StartServer(port *string, stopper *Stopper) {
 
-	l, e := net.Listen("tcp", ":"+*port)
-	if e != nil {
-		slog.Error(e.Error())
+	listener, err := net.Listen("tcp", ":"+*port)
+	if err != nil {
+		slog.Error(err.Error())
 		return
 	}
-	defer func() {
-		l.Close()
-		slog.Debug("Stopped listening on port " + *port)
-	}()
-	slog.Debug("Now listening on port " + *port)
 
-	c, e := l.Accept()
-	if e != nil {
-		slog.Error(e.Error())
-		return
+	slog.Info("Now listening on port " + *port)
+
+	connChan := make(chan net.Conn)
+	errorChan := make(chan error)
+
+	for {
+
+		// start a stopper goroutine to listen, 
+		// like that when shutdwon is required 
+		// listener will send error in chanel
+		// and StartServer will end
+		stopper.Go(func(_ *Stopper) {
+			conn, err := listener.Accept()
+			if err != nil {
+				errorChan <- err
+				return
+			}
+			connChan <- conn
+		})
+
+		select {
+		case <-stopper.Wait():
+
+			slog.Debug("Stopping accept loop ...")
+			listener.Close()
+			stopper.Stop()
+			return
+
+		case conn := <- connChan:
+
+			stopper.Go(func (child *Stopper){ 
+				Handle(conn, child) 
+			})
+		
+		case err := <- errorChan:
+			slog.Error(err.Error())
+		}
 	}
-	defer func() {
-		c.Close()
-		slog.Info("Connection closed")
-	}()
-	slog.Info("Incoming connection from " + c.RemoteAddr().String())
-
-	time.Sleep(10 * time.Second)
-
-	return
 }
