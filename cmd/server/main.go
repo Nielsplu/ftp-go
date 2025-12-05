@@ -22,6 +22,8 @@ func parseArgs() (port *string) {
 }
 
 func main() {
-	port := parseArgs()
-	server.RunServer(port)
+	
+	server.CreateArrayOfHidenFile()
+	//port := parseArgs()
+	//server.RunServer(port)
 }
