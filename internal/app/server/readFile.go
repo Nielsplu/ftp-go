@@ -27,16 +27,16 @@ func readFile(path string) []FileEntry {
 		return []FileEntry{}
 	}
 
-	var listFichiers []FileEntry
+	var arrayDirectory []FileEntry
 
 	for _, fichier := range data {
 
 		info, _ := fichier.Info()
 
-		pair := FileEntry{fichier.Name(), info.Size()}
+		fileEntry := FileEntry{fichier.Name(), info.Size()}
 
-		listFichiers = append(listFichiers, pair)
+		arrayDirectory = append(arrayDirectory, fileEntry)
 	}
 
-	return listFichiers
+	return arrayDirectory
 }
