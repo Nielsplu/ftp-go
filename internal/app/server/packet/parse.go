@@ -1,18 +1,111 @@
 package packet
 
 import (
+	"errors"
 	t "ftp/internal/app/server/types"
+	"strings"
 )
 
-func Parse(line string, answerChan chan t.PacketOut) (t.PacketIn, error) {
-	// TODO
-	if (line == "END\n") {
-		return t.PacketIn{ Type: t.End }, nil
+type ParseResult int
+const (
+	CommandeNotFound ParseResult = iota
+	MissingParameter
+	Ok
+)
+
+type cmdParser struct {
+	cmd 	   string
+	packetType t.PacketType
+	params     bool
+}
+
+func (p cmdParser) check(
+	beforeSpace, afterSpace string, 
+	answerChan chan t.PacketOut,
+) (packet t.PacketIn, result ParseResult) {
+
+	if beforeSpace == p.cmd {
+		if !p.params && afterSpace == "" {
+			return packet, MissingParameter
+		}
+		return t.PacketIn{ Type: p.packetType, Path: afterSpace, AnswerChan: answerChan}, Ok
 	}
 
-	if (line == "T\n") {
-		return t.PacketIn{ Type: t.Terminate }, nil
+	return
+}
+
+type cmdParserBuilder struct {
+	inner cmdParser
+}
+
+func cmdFor(cmd string, packetType t.PacketType) cmdParserBuilder {
+	return cmdParserBuilder {
+		inner: cmdParser {
+			cmd: cmd, 
+			packetType: packetType, 
+			params: true,
+		},
+	}
+}
+
+func (p cmdParserBuilder) withNoParams() cmdParserBuilder {
+	p.inner.params = false
+	return p
+}
+
+func (p cmdParserBuilder) build() cmdParser {
+	return p.inner
+}
+
+var clientCmdParsers = []cmdParser { 
+	cmdFor("End", t.End).withNoParams().build(),
+	cmdFor("List", t.List).build(),
+	cmdFor("Get", t.Get).build(),
+}
+
+var adminCmdParsers = []cmdParser { 
+	cmdFor("End", t.End).withNoParams().build(),
+	cmdFor("Terminate", t.Terminate).withNoParams().build(),
+	cmdFor("List", t.List).build(),
+	cmdFor("Hide", t.Hide).build(),
+	cmdFor("Reveal", t.Reveal).build(),
+}
+
+
+func Parse(line string, answerChan chan t.PacketOut, admin bool) (t.PacketIn, error) {
+
+	var cmdParsers []cmdParser
+	if admin {
+		cmdParsers = adminCmdParsers
+	}else {
+		cmdParsers = clientCmdParsers
 	}
 
-	return t.PacketIn{ Type: t.List, Path: "/salut man comment ça va ? \n est ce que ça marche là ? \n", AnswerChan: answerChan }, nil
+	// find first space in string
+	spaceIndex := strings.Index(line, " ")
+
+	var beforeSpace, afterSpace string
+	if spaceIndex == -1 {
+		beforeSpace = line
+		afterSpace = ""
+	}else {
+		beforeSpace = line[:spaceIndex]
+		// cannot be last char because
+		//  last char is break line
+		beforeSpace = line[spaceIndex + 1:]
+	}
+
+	
+	for _, cmdParser := range(cmdParsers) {
+		packetIn, result := cmdParser.check(beforeSpace, afterSpace, answerChan)
+		switch result {
+		case Ok:
+			return packetIn, nil
+		case MissingParameter:
+			return packetIn, errors.New("Missing Parameter")
+		}
+	}
+
+	return t.PacketIn{}, errors.New("Commande Not Found")
+
 }

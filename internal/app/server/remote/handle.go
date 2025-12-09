@@ -84,7 +84,7 @@ func Handle(
 
 		case line := <-lineChan:
 
-			packetIn, err := packet.Parse(line, packetOutChan)
+			packetIn, err := packet.Parse(line, packetOutChan, admin)
 			if err != nil {
 				slog.Error("Parse error : " + err.Error())
 				continue
