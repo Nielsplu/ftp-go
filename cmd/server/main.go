@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"log/slog"
-	"gitlab.univ-nantes.fr/iutna.info2.r305/proj/internal/app/server"
+	"ftp/internal/app/server"
 )
 
 func parseArgs() (port *string) {

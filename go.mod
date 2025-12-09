@@ -1,3 +1,3 @@
-module gitlab.univ-nantes.fr/iutna.info2.r305/proj
+module ftp
 
 go 1.24.9

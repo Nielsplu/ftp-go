@@ -1,13 +1,19 @@
-package server
+package remote
 
 import (
 	"log/slog"
 	"net"
+	. "ftp/internal/app/server/types"
 )
 
-func StartServer(port *string, stopper *Stopper) {
+func ListenOn(
+	port *string, 
+	admin bool,
+	packetInChan chan PacketIn, 
+	stopper *Stopper,
+) {
 
-	listener, err := net.Listen("tcp", ":"+*port)
+	listener, err := net.Listen("tcp", ":" + *port)
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -21,7 +27,7 @@ func StartServer(port *string, stopper *Stopper) {
 	for {
 
 		// start a stopper goroutine to listen, 
-		// like that when shutdwon is required 
+		// like that, when shutdwon is required 
 		// listener will send error in chanel
 		// and StartServer will end
 		stopper.Go(func(_ *Stopper) {
@@ -34,21 +40,25 @@ func StartServer(port *string, stopper *Stopper) {
 		})
 
 		select {
-		case <-stopper.Wait():
+		case <-stopper.WaitForStopRequest():
 
-			slog.Debug("Stopping accept loop ...")
 			listener.Close()
-			stopper.Stop()
+			stopper.StopChilds()
+			slog.Debug("Accept loop shutdown")
 			return
 
 		case conn := <- connChan:
 
 			stopper.Go(func (child *Stopper){ 
-				Handle(conn, child) 
+				// notify app that a new conn as started
+				packetInChan <- PacketIn{ Type: NewConn }
+				Handle(conn, admin, packetInChan, child) 
 			})
 		
 		case err := <- errorChan:
+
 			slog.Error(err.Error())
+
 		}
 	}
 }
