@@ -1,20 +1,21 @@
 package remote
 
 import (
-	. "ftp/internal/app/server/types"
-	"log/slog"
+	t "ftp/internal/app/server/types"
 	"net"
 )
 
 func StartWriter(
 	conn net.Conn, 
-	packetOutChan chan PacketOut, 
-	packetInChan chan PacketIn,
-	stopper *Stopper,
-) {
+	packetOutChan chan t.PacketOut, 
+	packetInChan chan t.PacketIn,
+	stopper *t.Stopper,
+) error {
 
+	defer conn.Close()
+
+	lowPriorityQueue := make([][]byte, 0)
 	normalQueue := make([][]byte, 0)
-	priorityQueue := make([][]byte, 0)
 
 	isChannelFull := false
 	nextPacketChan := make(chan []byte, 1)
@@ -25,13 +26,13 @@ func StartWriter(
 		// may be empty, if not :
 		// send to client
 		if !isChannelFull {
-			if len(priorityQueue) != 0 {
-				nextPacketChan <- priorityQueue[0]
-				priorityQueue = priorityQueue[1:]
-				isChannelFull = true
-			} else if len(normalQueue) != 0 {
+			if len(normalQueue) != 0 {
 				nextPacketChan <- normalQueue[0]
 				normalQueue = normalQueue[1:]
+				isChannelFull = true
+			} else if len(lowPriorityQueue) != 0 {
+				nextPacketChan <- lowPriorityQueue[0]
+				lowPriorityQueue = lowPriorityQueue[1:]
 				isChannelFull = true
 			}
 		}
@@ -39,23 +40,24 @@ func StartWriter(
 		select {
 		case <-stopper.WaitForStopRequest():
 
-			slog.Debug("Reader shutdown")
-			return
+			// send end before closing the conn
+			conn.Write([]byte("END\n"))
+			return nil
 
 		case packet := <-nextPacketChan:
 
 			isChannelFull = false
 			_, err := conn.Write(packet)
 			if (err != nil) {
-				slog.Error(err.Error())
+				return err
 			}
 
 		case packet := <-packetOutChan:
 
-			if packet.Priority {
-				priorityQueue = append(priorityQueue, packet.Buffer)
+			if packet.LowPriority {
+				lowPriorityQueue = append(lowPriorityQueue, packet.Buffer)
 			} else {
-				normalQueue = append(priorityQueue, packet.Buffer)
+				normalQueue = append(normalQueue, packet.Buffer)
 			}
 
 		}

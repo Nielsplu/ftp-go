@@ -14,11 +14,12 @@ const (
 )
 
 type PacketIn struct {
-    Type    PacketType
-    Data    any
+	Type       PacketType
+	Path       string
+	AnswerChan chan PacketOut
 }
 
 type PacketOut struct {
-	Buffer 	 []byte
-	Priority bool
+	Buffer      []byte
+	LowPriority bool
 }

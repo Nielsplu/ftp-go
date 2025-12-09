@@ -11,7 +11,7 @@ type Stopper struct {
 
 func NewStopper() *Stopper {
     return &Stopper{
-        stopReceiver: make(chan struct{}), 
+        stopReceiver: make(chan struct{}, 1), 
         childs:       make([]chan struct{}, 0),
     }
 }
@@ -57,9 +57,10 @@ func (s *Stopper) WaitForStopRequest() chan struct{} {
 
 func (s *Stopper) StopChilds() {
     s.childsMutex.Lock()
-	defer s.childsMutex.Unlock()
+	childs := s.childs
+	s.childsMutex.Unlock()
 
-    for _, channel := range s.childs {
+    for _, channel := range childs {
         channel <- struct{}{}
     }
 

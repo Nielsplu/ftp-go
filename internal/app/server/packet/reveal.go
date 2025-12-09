@@ -1,9 +1,9 @@
 package packet
 
 import (
-	. "ftp/internal/app/server/types"
+	t "ftp/internal/app/server/types"
 )
 
-func PerformeReveal(path string, responseChan chan PacketOut) {
+func PerformeReveal(path string, responseChan chan t.PacketOut) {
 	
 }

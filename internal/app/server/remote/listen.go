@@ -1,16 +1,17 @@
 package remote
 
 import (
+	"fmt"
+	t "ftp/internal/app/server/types"
 	"log/slog"
 	"net"
-	. "ftp/internal/app/server/types"
 )
 
 func ListenOn(
 	port *string, 
 	admin bool,
-	packetInChan chan PacketIn, 
-	stopper *Stopper,
+	packetInChan chan t.PacketIn, 
+	stopper *t.Stopper,
 ) {
 
 	listener, err := net.Listen("tcp", ":" + *port)
@@ -22,15 +23,16 @@ func ListenOn(
 	slog.Info("Now listening on port " + *port)
 
 	connChan := make(chan net.Conn)
-	errorChan := make(chan error)
+	errorChan := make(chan error, 1)
 
 	for {
 
 		// start a stopper goroutine to listen, 
 		// like that, when shutdwon is required 
-		// listener will send error in chanel
-		// and StartServer will end
-		stopper.Go(func(_ *Stopper) {
+		// and listener closed, an error 
+		// will be send in chanel
+		// and this goroutine will end
+		stopper.Go(func(_ *t.Stopper) {
 			conn, err := listener.Accept()
 			if err != nil {
 				errorChan <- err
@@ -42,22 +44,45 @@ func ListenOn(
 		select {
 		case <-stopper.WaitForStopRequest():
 
+			// close accept goroutine
 			listener.Close()
+
+			// wait for all conn to shutdown
 			stopper.StopChilds()
-			slog.Debug("Accept loop shutdown")
+
+			slog.Debug(fmt.Sprintf("Accept loop shutdown (order, admin=%v)", admin))
 			return
 
 		case conn := <- connChan:
 
-			stopper.Go(func (child *Stopper){ 
-				// notify app that a new conn as started
-				packetInChan <- PacketIn{ Type: NewConn }
-				Handle(conn, admin, packetInChan, child) 
-			})
+			// do not create a goroutine
+			// if in admin mode
+			if (!admin) {
+
+				stopper.Go(func(child *t.Stopper) { 
+					// notify app that a new conn as started
+					packetInChan <- t.PacketIn{ Type: t.NewConn }
+					Handle(conn, admin, packetInChan, child) 
+				})
+
+			}else {
+
+				// handle connection without goroutine to 
+				// avoid multiple admin connection
+				stopRequested := Handle(conn, admin, packetInChan, stopper) 
+				if stopRequested { 
+					// close accept goroutine
+					listener.Close()
+
+					slog.Debug(fmt.Sprintf("Accept loop shutdown (order, admin=%v)", admin))
+					return
+				}
+
+			}
 		
 		case err := <- errorChan:
 
-			slog.Error(err.Error())
+			slog.Error("Accept loop error : " + err.Error())
 
 		}
 	}

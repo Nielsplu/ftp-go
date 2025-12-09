@@ -1,9 +1,9 @@
 package packet
 
 import (
-	. "ftp/internal/app/server/types"
+	t "ftp/internal/app/server/types"
 )
 
-func PerformeList(path string, responseChan chan PacketOut) {
-
+func PerformeList(path string, responseChan chan t.PacketOut) {
+	responseChan <- t.PacketOut{ Buffer: []byte(path) }
 }
