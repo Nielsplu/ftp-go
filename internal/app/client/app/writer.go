@@ -44,7 +44,6 @@ func StartWriter(
 				}()
 				continue
 			}
-			
 
 			inChan <- log.AddLog(log.Usr, ftpCmd)
 			_, err := conn.Write([]byte(ftpCmd + "\n"))

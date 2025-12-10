@@ -6,10 +6,11 @@ import (
 )
 
 type Model struct {
-	textInput 	 textinput.Model
-	history   	 []string
+	textInput    textinput.Model
+	path         string
+	history      []string
 	historyIndex int
-	backupCmd   string
+	backupCmd    string
 }
 
 func New() Model {
@@ -18,8 +19,9 @@ func New() Model {
 	textInput.Placeholder = "Entrez une commande"
 	textInput.CharLimit = 156
 	textInput.Width = 40
+	textInput.Prompt = "/ $ "
 
-	return Model{ textInput: textInput, history: []string{}, historyIndex: -1 }
+	return Model{textInput: textInput, history: []string{}, historyIndex: -1}
 }
 
 func (m Model) Init() tea.Cmd {
@@ -30,6 +32,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case ChangeDirMsg:
+		m.path = msg.To
+		m.textInput.Prompt = m.path + " $ "
+		return m, nil
+
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
@@ -39,12 +46,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.textInput.SetValue("")
 
 			m.historyIndex = -1
-			if len(m.history) == 0 || m.history[len(m.history) -1] != value {
+			if len(m.history) == 0 || m.history[len(m.history)-1] != value {
 				m.history = append(m.history, value)
 			}
-			
+
 			// emit cmd
-			return m, emitCmd(value)
+			return m, emitFtpCmd(value)
 
 		case tea.KeyUp:
 
@@ -55,7 +62,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if m.historyIndex == -1 {
 				m.backupCmd = m.textInput.Value()
 				m.historyIndex = len(m.history) - 1
-			}else if m.historyIndex > 0 {
+			} else if m.historyIndex > 0 {
 				m.historyIndex -= 1
 			}
 
@@ -68,13 +75,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				break
 			}
 
-			if m.historyIndex == len(m.history) - 1 {
+			if m.historyIndex == len(m.history)-1 {
 				m.historyIndex = -1
 				m.textInput.SetValue(m.backupCmd)
 				break
 			}
-			
-			if len(m.history) - 1 > m.historyIndex {
+
+			if len(m.history)-1 > m.historyIndex {
 				m.historyIndex += 1
 			}
 
@@ -83,7 +90,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		}
 	}
-
 	m.textInput, cmd = m.textInput.Update(msg)
 	return m, cmd
 }

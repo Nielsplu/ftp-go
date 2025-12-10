@@ -23,14 +23,14 @@ type cmdParser struct {
 
 func (p cmdParser) check(
 	beforeSpace, afterSpace string,
-	answerChan chan t.PacketOut,
+	clientId string,
 ) (packet t.PacketIn, result ParseResult) {
 
 	if beforeSpace == p.cmd {
 		if !p.params && afterSpace == "" {
 			return packet, MissingParameter
 		}
-		return t.PacketIn{Type: p.packetType, Path: afterSpace, AnswerChan: answerChan}, Ok
+		return t.PacketIn{Type: p.packetType, Path: afterSpace, ClientId: clientId }, Ok
 	}
 
 	return
@@ -62,18 +62,24 @@ func (p cmdParserBuilder) build() cmdParser {
 var clientCmdParsers = []cmdParser{
 	cmdFor("End", t.End).withNoParams().build(),
 	cmdFor("List", t.List).build(),
-	cmdFor("Get", t.Get).build(),
+	cmdFor("Get", t.Get).withNoParams().build(),
+	cmdFor("Cd", t.Cd).build(),
 }
 
 var adminCmdParsers = []cmdParser{
 	cmdFor("End", t.End).withNoParams().build(),
 	cmdFor("Terminate", t.Terminate).withNoParams().build(),
 	cmdFor("List", t.List).build(),
+	cmdFor("Cd", t.Cd).withNoParams().build(),
 	cmdFor("Hide", t.Hide).build(),
 	cmdFor("Reveal", t.Reveal).build(),
 }
 
-func Parse(line string, answerChan chan t.PacketOut, admin bool) (t.PacketIn, error) {
+func Parse(
+	line string,
+	admin bool,
+	clientId string,
+) (t.PacketIn, error) {
 
 	slog.Debug(line)
 
@@ -99,7 +105,7 @@ func Parse(line string, answerChan chan t.PacketOut, admin bool) (t.PacketIn, er
 	}
 
 	for _, cmdParser := range cmdParsers {
-		packetIn, result := cmdParser.check(beforeSpace, afterSpace, answerChan)
+		packetIn, result := cmdParser.check(beforeSpace, afterSpace, clientId)
 		switch result {
 		case Ok:
 			return packetIn, nil

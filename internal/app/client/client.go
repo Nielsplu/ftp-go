@@ -6,7 +6,7 @@ import (
 	"ftp/internal/app/client/view/log"
 	"log/slog"
 	"net"
-
+	
 	tea "github.com/charmbracelet/bubbletea"
 )
 

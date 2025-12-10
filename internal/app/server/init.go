@@ -2,58 +2,92 @@ package server
 
 import (
 	"fmt"
-	"log/slog"
-	"ftp/internal/app/server/remote"
 	"ftp/internal/app/server/packet"
+	"ftp/internal/app/server/remote"
 	t "ftp/internal/app/server/types"
 	"ftp/internal/pkg/utils"
+	"log/slog"
 )
 
-func Start(config ServerConfig) {
+func Start(config t.ServerConfig) {
 
 	mainStopper := utils.NewStopper()
 	packetInChan := make(chan t.PacketIn, 10)
+	internalConnActionChan := make(chan t.InternalConnAction, 10)
 
 	// listen on non admin port
-	mainStopper.Go(func(child *utils.Stopper) { 
-		remote.ListenOn(&config.Port, false, packetInChan, child)
+	mainStopper.Go(func(child *utils.Stopper) {
+		remote.ListenOn(&config.Port, false, packetInChan, internalConnActionChan, child)
 	})
 
 	// listen on admin port
-	mainStopper.Go(func(child *utils.Stopper) { 
-		remote.ListenOn(&config.AdminPort, true, packetInChan, child)
+	mainStopper.Go(func(child *utils.Stopper) {
+		remote.ListenOn(&config.AdminPort, true, packetInChan, internalConnActionChan, child)
 	})
 
-	nClientConnected := 0
+	state := t.ServerState {
+		Clients: make(map[string]t.Client),
+		Config: config,
+	}
 
 	for {
-		packetIn := <- packetInChan
 
-		switch packetIn.Type {
+		select {
+		case connAction := <- internalConnActionChan:
 
-		case t.List: packet.PerformeList(packetIn.Path, packetIn.AnswerChan, config.RootPath)
-		case t.Get: packet.PerformeGet(packetIn.Path, packetIn.AnswerChan, config.RootPath, mainStopper)
-		case t.Hide: packet.PerformeHide(packetIn.Path, packetIn.AnswerChan)
-		case t.Reveal: packet.PerformeReveal(packetIn.Path, packetIn.AnswerChan)
-		case t.NewConn: 
+			switch connAction := connAction.(type) {
+			case t.NewConn:
 
-			nClientConnected += 1
-			slog.Info(fmt.Sprintf("%d clients connected", nClientConnected))
+				state.Clients[connAction.Id] = connAction.Client
+				slog.Info(fmt.Sprintf("%d clients connected", len(state.Clients)))
 
-		case t.ConnEnd: 
+			case t.ConnEnd:
 
+				delete(state.Clients, connAction.Id)
+				slog.Info(fmt.Sprintf("%d clients connected", len(state.Clients)))
 
-			nClientConnected -= 1
-			slog.Info(fmt.Sprintf("%d clients connected", nClientConnected))
+			}
 
-		case t.Terminate:
-			
-			mainStopper.StopChilds()
-			println("Bye bye !")
-			return
+		case packetIn := <-packetInChan:
 
-		default:
-			slog.Error(fmt.Sprintf("Unknown packetType : %d", packetIn.Type))
+			client, exists := state.Clients[packetIn.ClientId]
+			if !exists {
+				slog.Error("No client with id : " + packetIn.ClientId)
+				continue
+			}
+
+			switch packetIn.Type {
+
+			case t.List:
+				
+				packet.PerformeList(packetIn.Path, client.PacketOutChan, config.RootPath)
+
+			case t.Get:
+
+				packet.PerformeGet(packetIn.Path, client.PacketOutChan, config.RootPath, mainStopper)
+
+			case t.Hide:
+
+				packet.PerformeHide(packetIn.Path, client.PacketOutChan)
+
+			case t.Reveal:
+
+				packet.PerformeReveal(packetIn.Path, client.PacketOutChan)
+
+			case t.Cd:
+
+				packet.PerformeCd(packetIn.Path, client.PacketOutChan, config.RootPath, &client)
+
+			case t.Terminate:
+
+				mainStopper.StopChilds()
+				println("Bye bye !")
+				return
+
+			default:
+				slog.Error(fmt.Sprintf("Unknown packetType : %d", packetIn.Type))
+			}
+
 		}
 	}
 

@@ -12,6 +12,7 @@ func ListenOn(
 	port *string, 
 	admin bool,
 	packetInChan chan t.PacketIn, 
+	internalConnActionChan chan t.InternalConnAction, 
 	stopper *utils.Stopper,
 ) {
 
@@ -62,15 +63,14 @@ func ListenOn(
 
 				stopper.Go(func(child *utils.Stopper) { 
 					// notify app that a new conn as started
-					packetInChan <- t.PacketIn{ Type: t.NewConn }
-					Handle(conn, admin, packetInChan, child) 
+					Handle(conn, admin, internalConnActionChan, packetInChan, child) 
 				})
 
 			}else {
 
 				// handle connection without goroutine to 
 				// avoid multiple admin connection
-				stopRequested := Handle(conn, admin, packetInChan, stopper) 
+				stopRequested := Handle(conn, admin, internalConnActionChan, packetInChan, stopper) 
 				if stopRequested { 
 					// close accept goroutine
 					listener.Close()

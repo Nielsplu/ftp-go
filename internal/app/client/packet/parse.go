@@ -2,7 +2,9 @@ package packet
 
 import (
 	"bufio"
+	"ftp/internal/app/client/view/cmd"
 	"ftp/internal/app/client/view/log"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -42,6 +44,13 @@ func Performe(
 	case "Chunk\n":
 
 		performeChunk(reader, inChan, ioErrorChan, chunkFileMap)
+		return
+
+	}
+
+	if strings.HasPrefix(line, "Moveto") && len(line) > 7{
+
+		inChan <- cmd.ChangeDir(line[7:len(line)-1])
 		return
 
 	}

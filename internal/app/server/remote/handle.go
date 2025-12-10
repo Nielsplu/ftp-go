@@ -12,9 +12,23 @@ import (
 func Handle(
 	conn net.Conn,
 	admin bool,
+	internalConnActionChan chan t.InternalConnAction,
 	packetInChan chan t.PacketIn,
 	stopper *utils.Stopper,
 ) bool {
+
+
+	id := utils.MakeId()
+	packetOutChan := make(chan t.PacketOut, 10)
+
+	// notify app that new conn as started
+	internalConnActionChan <- t.NewConn { 
+		Id: id,
+		Client: t.Client{
+			CurrentPath: "/",
+			PacketOutChan: packetOutChan,
+		},
+	}
 
 	// Do not defer conn.Close here
 	// it's writer responsability to 
@@ -27,7 +41,6 @@ func Handle(
 	ioErrorChan := make(chan error, 1)
 
 	// create writer goroutine with priority
-	packetOutChan := make(chan t.PacketOut, 10)
 	stopper.Go(func(child *utils.Stopper) {
 		
 		err := StartWriter(conn, packetOutChan, packetInChan, child)
@@ -80,12 +93,12 @@ func Handle(
 			slog.Error("Conn shutdown with error : " + err.Error())
 
 			// notify core that conn has ended
-			packetInChan <- t.PacketIn { Type: t.ConnEnd }
+			internalConnActionChan <- t.ConnEnd { Id: id }
 			return false
 
 		case line := <-lineChan:
 
-			packetIn, err := packet.Parse(line, packetOutChan, admin)
+			packetIn, err := packet.Parse(line, admin, id)
 			if err != nil {
 				slog.Error("Parse error : " + err.Error())
 				continue
@@ -98,8 +111,14 @@ func Handle(
 				slog.Debug("Conn shutdown (End requested)")
 
 				// notify core that conn has ended
-				packetInChan <- t.PacketIn { Type: t.ConnEnd }
+				internalConnActionChan <- t.ConnEnd { Id: id }
 				return false
+			}
+
+			if packetIn.Type == t.Cd {
+			
+
+
 			}
 
 			packetInChan <- packetIn

@@ -7,14 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"path/filepath"
-	"strings"
-	"time"
 )
-
-func makeId() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
-}
 
 func PerformeGet(
 	path string,
@@ -23,23 +16,9 @@ func PerformeGet(
 	stopper *utils.Stopper,
 ) {
 
-	//get the absolute path
-	absRoot, err := filepath.Abs(rootPath)
+	cleanPath, err := checkPath(rootPath, path)
 	if err != nil {
-		slog.Error("Invalid root path")
-		responseChan <- t.PacketOut{Buffer: []byte("FileUnknown\n")}
-		return
-	}
-
-	//get the path
-	fullPath := filepath.Join(absRoot, path)
-
-	//clean path
-	cleanPath := filepath.Clean(fullPath)
-
-	if !strings.HasPrefix(cleanPath, absRoot) {
-		slog.Warn("error path traversal attempt", "path", path)
-		responseChan <- t.PacketOut{Buffer: []byte("FileUnknown\n")}
+		responseChan <- t.PacketOut{ Buffer: []byte("FileUnknown\n") }
 		return
 	}
 
@@ -101,7 +80,7 @@ func sendWithChunks(
 	responseChan chan t.PacketOut,
 	stopper *utils.Stopper,
 ) {
-	id := makeId()
+	id := utils.MakeId()
 
 	// initialize file transfer
 	initPacket := fmt.Sprintf(

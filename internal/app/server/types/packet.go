@@ -5,18 +5,30 @@ type PacketType int
 const (
 	List PacketType = iota
 	Get
+	Cd
 	End
 	Hide
 	Reveal
 	Terminate
-	NewConn
-	ConnEnd
 )
 
+type Client struct {
+	CurrentPath   string
+	PacketOutChan chan PacketOut
+}
+
+type ServerConfig struct {
+	Port, AdminPort, RootPath string
+}
+
+type ServerState struct {
+	Clients map[string]Client
+	Config  ServerConfig
+}
+
 type PacketIn struct {
-	Type       PacketType
-	Path       string
-	AnswerChan chan PacketOut
+	Type           PacketType
+	Path, ClientId string
 }
 
 type PacketOut struct {

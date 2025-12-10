@@ -4,7 +4,7 @@ import (
 	"ftp/internal/app/client/view"
 	"ftp/internal/pkg/utils"
 	"net"
-
+	
 	tea "github.com/charmbracelet/bubbletea"
 )
 

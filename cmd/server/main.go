@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log/slog"
 	"ftp/internal/app/server"
+	t "ftp/internal/app/server/types"
 )
 
 func parseArgs() (port *string, adminPort *string) {
@@ -24,7 +25,7 @@ func parseArgs() (port *string, adminPort *string) {
 
 func main() {
 	port, adminPort := parseArgs()
-	server.Start(server.ServerConfig {
+	server.Start(t.ServerConfig {
 		Port: *port, AdminPort: *adminPort, RootPath: "data",
 	})
 }
