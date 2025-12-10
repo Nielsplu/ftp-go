@@ -7,12 +7,17 @@ import (
 
 type LogOrigin int
 
+func renderWithColor(color, content string) string {
+	lineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+	return lineStyle.Render(content)
+}
+
 func (log LogOrigin) toStr() string {
-	lineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#a3400eff"))
+	
 	switch log {
-	case Usr: return lineStyle.Render("[Usr]")
-	case Sys: return lineStyle.Render("[Sys]")
-	case Srv: return lineStyle.Render("[Srv]")
+	case Usr: return renderWithColor("#c2d2ffff", "[Usr]")
+	case Sys: return renderWithColor("#f35656ff", "[Sys]")
+	case Srv: return renderWithColor("#f6883eff", "[Srv]")
 	}
 
 	return "[Unknown]"

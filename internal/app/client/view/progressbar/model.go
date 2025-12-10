@@ -21,7 +21,7 @@ type Model struct {
 func New(filename string) Model {
 	return Model{
 		Filename: filename,
-		progress: progress.New(progress.WithScaledGradient("#FF7CCB", "#FDFF8C")),
+		progress: progress.New(progress.WithScaledGradient("#3e57f6ff", "#ee4545ff")),
 	}
 }
 

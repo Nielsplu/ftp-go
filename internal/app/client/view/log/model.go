@@ -33,7 +33,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 
 		m.Width = msg.Width
-		m.Height = msg.Height - 10
+		m.Height = msg.Height
 
 	}
 
@@ -45,8 +45,12 @@ func (m Model) View() string {
 	content := ""
 	
 	for _, item := range m.Items {
-		content += item.origin.toStr() + " : " + item.content + "\n"
+		content += item.origin.toStr() + " " + item.content + "\n"
 	}
+
+	for k := 0; k < m.Height - len(m.Items); k ++ {
+		content += "\n"
+	} 
 
 	return content
 }

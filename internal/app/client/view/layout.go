@@ -31,13 +31,6 @@ func (m Model) Init() tea.Cmd {
 	return listenForCmdIn(m.msgInChan)
 }
 
-func (m Model) sendFtpCmd(ftpCmd string) tea.Cmd {
-	return func() tea.Msg {
-		m.cmdOutChan <- ftpCmd
-		return nil
-	}
-}
-
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd = []tea.Cmd{}
 	var c tea.Cmd
@@ -46,7 +39,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 
 		// update log
-		m.log, c = m.log.Update(msg)
+		m.log, c = m.log.Update(tea.WindowSizeMsg {
+			Width: msg.Width,
+			Height: msg.Height - (4 + len(m.progressbars) * 3),
+		})
 		cmds = append(cmds, c)
 
 		// update cmd
@@ -64,12 +60,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// check exit
 		switch msg.String() {
         case "ctrl+c", "esc":
-            return m, tea.Quit 
+            return m, func() tea.Msg { return cmd.FtpCmd{ Value: "End"} }
         }
 
 		// update cmd
 		m.cmd, c = m.cmd.Update(msg)
 		cmds = append(cmds, c)
+
+	case FatalError:
+
+		m.log, c = m.log.Update(log.AddLog(log.Sys, msg.message))
+		cmds = append(cmds, c)
+		cmds = append(cmds, func() tea.Msg {
+			time.Sleep(time.Second)
+			println(msg.err.Error())
+			return tea.Quit()
+		})
 
 	case log.LogMsg:
 
@@ -83,8 +89,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			msg.filename, 
 		))
 
-		// listen again
-		cmds = append(cmds, listenForCmdIn(m.msgInChan))
+		m.log, c = m.log.Update(tea.WindowSizeMsg {
+			Width: m.log.Width,
+			Height: m.log.Height - 2,
+		})
+		cmds = append(cmds, c)
 
 	case RemoveProgressBarMsg:
 
@@ -93,6 +102,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if (item.Filename == msg.filename) {
 				m.progressbars[index] = m.progressbars[len(m.progressbars) - 1]
 				m.progressbars = m.progressbars[:len(m.progressbars)-1]
+
+				m.log, c = m.log.Update(tea.WindowSizeMsg {
+					Width: m.log.Width,
+					Height: m.log.Height + 2,
+				})
+				cmds = append(cmds, c)
 				break
 			}
 		}
@@ -115,13 +130,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// listen again
-		cmds = append(cmds, listenForCmdIn(m.msgInChan))
-
 	case cmd.FtpCmd:
 
-		// send ftp commande using tea cmd system
-		cmds = append(cmds, m.sendFtpCmd(msg.Value))
+		// send ftp commande 
+		m.cmdOutChan <- msg.Value
+
+	case outMsg:
+
+		// execute acual cmd
+		cmds = append(cmds, func() tea.Msg { return msg.inner })
+
+		// start listening again
+		cmds = append(cmds, listenForCmdIn(m.msgInChan))
 
 	}
 

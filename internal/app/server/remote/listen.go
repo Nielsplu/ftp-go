@@ -3,6 +3,7 @@ package remote
 import (
 	"fmt"
 	t "ftp/internal/app/server/types"
+	"ftp/internal/pkg/utils"
 	"log/slog"
 	"net"
 )
@@ -11,7 +12,7 @@ func ListenOn(
 	port *string, 
 	admin bool,
 	packetInChan chan t.PacketIn, 
-	stopper *t.Stopper,
+	stopper *utils.Stopper,
 ) {
 
 	listener, err := net.Listen("tcp", ":" + *port)
@@ -32,7 +33,7 @@ func ListenOn(
 		// and listener closed, an error 
 		// will be send in chanel
 		// and this goroutine will end
-		stopper.Go(func(_ *t.Stopper) {
+		stopper.Go(func(_ *utils.Stopper) {
 			conn, err := listener.Accept()
 			if err != nil {
 				errorChan <- err
@@ -59,7 +60,7 @@ func ListenOn(
 			// if in admin mode
 			if (!admin) {
 
-				stopper.Go(func(child *t.Stopper) { 
+				stopper.Go(func(child *utils.Stopper) { 
 					// notify app that a new conn as started
 					packetInChan <- t.PacketIn{ Type: t.NewConn }
 					Handle(conn, admin, packetInChan, child) 

@@ -6,20 +6,21 @@ import (
 	"ftp/internal/app/server/remote"
 	"ftp/internal/app/server/packet"
 	t "ftp/internal/app/server/types"
+	"ftp/internal/pkg/utils"
 )
 
 func Start(config ServerConfig) {
 
-	mainStopper := t.NewStopper()
+	mainStopper := utils.NewStopper()
 	packetInChan := make(chan t.PacketIn, 10)
 
 	// listen on non admin port
-	mainStopper.Go(func(child *t.Stopper) { 
+	mainStopper.Go(func(child *utils.Stopper) { 
 		remote.ListenOn(&config.Port, false, packetInChan, child)
 	})
 
 	// listen on admin port
-	mainStopper.Go(func(child *t.Stopper) { 
+	mainStopper.Go(func(child *utils.Stopper) { 
 		remote.ListenOn(&config.AdminPort, true, packetInChan, child)
 	})
 

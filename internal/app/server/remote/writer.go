@@ -2,6 +2,7 @@ package remote
 
 import (
 	t "ftp/internal/app/server/types"
+	"ftp/internal/pkg/utils"
 	"net"
 )
 
@@ -9,7 +10,7 @@ func StartWriter(
 	conn net.Conn, 
 	packetOutChan chan t.PacketOut, 
 	packetInChan chan t.PacketIn,
-	stopper *t.Stopper,
+	stopper *utils.Stopper,
 ) error {
 
 	defer conn.Close()

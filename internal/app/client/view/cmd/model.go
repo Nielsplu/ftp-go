@@ -6,7 +6,10 @@ import (
 )
 
 type Model struct {
-	textInput textinput.Model
+	textInput 	 textinput.Model
+	history   	 []string
+	historyIndex int
+	backupCmd   string
 }
 
 func New() Model {
@@ -16,7 +19,7 @@ func New() Model {
 	textInput.CharLimit = 156
 	textInput.Width = 40
 
-	return Model{ textInput }
+	return Model{ textInput: textInput, history: []string{}, historyIndex: -1 }
 }
 
 func (m Model) Init() tea.Cmd {
@@ -28,14 +31,56 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if (msg.Type == tea.KeyEnter) {
+		switch msg.Type {
+		case tea.KeyEnter:
 
 			// get value and reset input
 			value := m.textInput.Value()
 			m.textInput.SetValue("")
+
+			m.historyIndex = -1
+			if len(m.history) == 0 || m.history[len(m.history) -1] != value {
+				m.history = append(m.history, value)
+			}
 			
 			// emit cmd
 			return m, emitCmd(value)
+
+		case tea.KeyUp:
+
+			if len(m.history) == 0 {
+				break
+			}
+
+			if m.historyIndex == -1 {
+				m.backupCmd = m.textInput.Value()
+				m.historyIndex = len(m.history) - 1
+			}else if m.historyIndex > 0 {
+				m.historyIndex -= 1
+			}
+
+			m.textInput.SetValue(m.history[m.historyIndex])
+			return m, cmd
+
+		case tea.KeyDown:
+
+			if len(m.history) == 0 || m.historyIndex == -1 {
+				break
+			}
+
+			if m.historyIndex == len(m.history) - 1 {
+				m.historyIndex = -1
+				m.textInput.SetValue(m.backupCmd)
+				break
+			}
+			
+			if len(m.history) - 1 > m.historyIndex {
+				m.historyIndex += 1
+			}
+
+			m.textInput.SetValue(m.history[m.historyIndex])
+			return m, cmd
+
 		}
 	}
 

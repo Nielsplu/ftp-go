@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"ftp/internal/app/server/packet"
 	t "ftp/internal/app/server/types"
+	"ftp/internal/pkg/utils"
 	"log/slog"
 	"net"
 )
@@ -12,7 +13,7 @@ func Handle(
 	conn net.Conn,
 	admin bool,
 	packetInChan chan t.PacketIn,
-	stopper *t.Stopper,
+	stopper *utils.Stopper,
 ) bool {
 
 	// Do not defer conn.Close here
@@ -27,7 +28,7 @@ func Handle(
 
 	// create writer goroutine with priority
 	packetOutChan := make(chan t.PacketOut, 10)
-	stopper.Go(func(child *t.Stopper) {
+	stopper.Go(func(child *utils.Stopper) {
 		
 		err := StartWriter(conn, packetOutChan, packetInChan, child)
 
@@ -48,7 +49,7 @@ func Handle(
 		// we need to listen for stopper.
 		// If stop is requested, conn is closed and
 		// err sent to ioErrorChan will be ignored
-		stopper.Go(func(_ *t.Stopper) {
+		stopper.Go(func(_ *utils.Stopper) {
 			line, err := reader.ReadString('\n')
 			if err != nil {
 
