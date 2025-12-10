@@ -1,43 +1,50 @@
 package packet
 
 import (
+	"fmt"
 	t "ftp/internal/app/server/types"
-	"os"
 	"log/slog"
+	"os"
 )
 
-var dir string
-
-type FileEntry struct {
+type fileEntry struct {
 	filePath string
 	fileSize int64
 }
 
-func PerformeList(path string, responseChan chan t.PacketOut) {
-	responseChan <- t.PacketOut{ Buffer: []byte(path) }
+func PerformeList(path string, responseChan chan t.PacketOut, rootPath string) {
+	arrayFileEntry := readFile(rootPath + "/" + path)
+	fileCnt := len(arrayFileEntry)
+
+	packetStr := fmt.Sprintf("FileCnt %d\n", fileCnt)
+
+	for _, entry := range arrayFileEntry {
+		packetStr += fmt.Sprintf("%s %d\n", entry.filePath, entry.fileSize)
+	}
+
+	responseChan <- t.PacketOut{Buffer: []byte(packetStr)}
 }
 
-func readFile(path string) []FileEntry {
+func readFile(path string) []fileEntry {
 
-	data, err := os.ReadDir(dir + path)
+	data, err := os.ReadDir(path)
 
 	if err != nil {
 
 		slog.Error(err.Error())
-		return []FileEntry{}
+		return []fileEntry{}
 	}
 
-	var arrayDirectory []FileEntry
+	var arrayDirectory []fileEntry
 
 	for _, fichier := range data {
 
 		info, _ := fichier.Info()
 
-		fileEntry := FileEntry{fichier.Name(), info.Size()}
+		fileEntry := fileEntry{fichier.Name(), info.Size()}
 
 		arrayDirectory = append(arrayDirectory, fileEntry)
 	}
 
 	return arrayDirectory
 }
-

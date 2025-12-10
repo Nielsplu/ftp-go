@@ -30,7 +30,8 @@ func Start(config ServerConfig) {
 		packetIn := <- packetInChan
 
 		switch packetIn.Type {
-		case t.List: packet.PerformeList(packetIn.Path, packetIn.AnswerChan)
+
+		case t.List: packet.PerformeList(packetIn.Path, packetIn.AnswerChan, config.RootPath)
 		case t.Get: packet.PerformeGet(packetIn.Path, packetIn.AnswerChan, config.RootPath)
 		case t.Hide: packet.PerformeHide(packetIn.Path, packetIn.AnswerChan)
 		case t.Reveal: packet.PerformeReveal(packetIn.Path, packetIn.AnswerChan)

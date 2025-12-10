@@ -25,6 +25,6 @@ func parseArgs() (port *string, adminPort *string) {
 func main() {
 	port, adminPort := parseArgs()
 	server.Start(server.ServerConfig {
-		Port: *port, AdminPort: *adminPort,
+		Port: *port, AdminPort: *adminPort, RootPath: "data",
 	})
 }
