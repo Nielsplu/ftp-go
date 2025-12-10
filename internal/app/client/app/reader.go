@@ -20,6 +20,8 @@ func StartReader(
 	reader := bufio.NewReader(conn)
 	lineChan := make(chan string, 1)
 
+	chunkFileMap := make(map[string]packet.ChunkFileTransfer, 0)
+
 	for {
 
 		stopper.Go(func(_ *utils.Stopper) {
@@ -47,7 +49,7 @@ func StartReader(
 				return
 			}
 
-			packet.Performe(line, reader, inChan, ioErrorChan)
+			packet.Performe(line, reader, inChan, ioErrorChan, &chunkFileMap)
 		}
 	}
 }
