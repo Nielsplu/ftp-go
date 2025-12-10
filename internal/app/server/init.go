@@ -3,10 +3,17 @@ package server
 import (
 	"fmt"
 	"ftp/internal/app/server/packet"
+<<<<<<< HEAD
 	"ftp/internal/app/server/remote"
 	t "ftp/internal/app/server/types"
 	"ftp/internal/pkg/utils"
 	"log/slog"
+=======
+	"ftp/internal/pkg/utils"
+	"ftp/internal/app/server/hide"
+
+	t "ftp/internal/app/server/types"
+>>>>>>> 8951daf (update Hide Reveal and List)
 )
 
 func Start(config t.ServerConfig) {
@@ -25,6 +32,7 @@ func Start(config t.ServerConfig) {
 		remote.ListenOn(&config.AdminPort, true, packetInChan, internalConnActionChan, child)
 	})
 
+	config.HiddenFiles = hide.ReadFromFile("hiddenFile.txt")
 	state := t.ServerState {
 		Clients: make(map[string]t.Client),
 		Config: config,
@@ -60,7 +68,7 @@ func Start(config t.ServerConfig) {
 
 			case t.List:
 				
-				packet.PerformeList(packetIn.Path, client.PacketOutChan, config.RootPath)
+				packet.PerformeList(packetIn.Path, client.PacketOutChan, config.RootPath, config.HiddenFiles)
 
 			case t.Get:
 
@@ -68,11 +76,11 @@ func Start(config t.ServerConfig) {
 
 			case t.Hide:
 
-				packet.PerformeHide(packetIn.Path, client.PacketOutChan)
+				packet.PerformeHide(packetIn.Path, client.PacketOutChan, config.RootPath, config.HiddenFiles)
 
 			case t.Reveal:
 
-				packet.PerformeReveal(packetIn.Path, client.PacketOutChan)
+				packet.PerformeReveal(packetIn.Path, client.PacketOutChan, config.RootPath, config.HiddenFiles)
 
 			case t.Cd:
 

@@ -100,7 +100,8 @@ func Handle(
 
 			packetIn, err := packet.Parse(line, admin, id)
 			if err != nil {
-				slog.Error("Parse error : " + err.Error())
+				packetOutChan <- t.PacketOut{ Buffer: []byte(err.Error() + "\n") }
+				slog.Debug("Parse error : " + err.Error())
 				continue
 			}
 

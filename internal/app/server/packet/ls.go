@@ -2,6 +2,7 @@ package packet
 
 import (
 	"fmt"
+	"ftp/internal/app/server/hide"
 	t "ftp/internal/app/server/types"
 	"log/slog"
 	"os"
@@ -12,12 +13,20 @@ type fileEntry struct {
 	fileSize int64
 }
 
-func PerformeList(path string, responseChan chan t.PacketOut, rootPath string) {
-	arrayFileEntry := readFile(rootPath + "/" + path)
+func PerformeList(
+	path string, 
+	responseChan chan t.PacketOut, 
+	rootPath string, 
+	hiddenFiles hide.HiddenFileCollection,
+) {
+
+	arrayFileEntry := readFile(rootPath + path, hiddenFiles)
 	fileCnt := len(arrayFileEntry)
 
 	packetStr := fmt.Sprintf("FileCnt %d\n", fileCnt)
 
+	// add line per line the Name 
+	// and the Size of the file
 	for _, entry := range arrayFileEntry {
 		packetStr += fmt.Sprintf("%s %d\n", entry.filePath, entry.fileSize)
 	}
@@ -25,8 +34,9 @@ func PerformeList(path string, responseChan chan t.PacketOut, rootPath string) {
 	responseChan <- t.PacketOut{Buffer: []byte(packetStr)}
 }
 
-func readFile(path string) []fileEntry {
+func readFile(path string, hiddenFiles hide.HiddenFileCollection) []fileEntry {
 
+	// open the file and get data
 	data, err := os.ReadDir(path)
 
 	if err != nil {
@@ -37,13 +47,22 @@ func readFile(path string) []fileEntry {
 
 	var arrayDirectory []fileEntry
 
+	if path[len(path) - 1] != '/'{
+		path += "/"
+	}
+
+	// add to arrayDirectory the Name and the Size 
+	// of the file not in hiddenFiles
 	for _, fichier := range data {
 
 		info, _ := fichier.Info()
 
-		fileEntry := fileEntry{fichier.Name(), info.Size()}
+		if !hiddenFiles.IsPathHidden(path + fichier.Name()){
 
-		arrayDirectory = append(arrayDirectory, fileEntry)
+			fileEntry := fileEntry{fichier.Name(), info.Size()}
+
+			arrayDirectory = append(arrayDirectory, fileEntry)
+		}
 	}
 
 	return arrayDirectory

@@ -27,7 +27,7 @@ func (p cmdParser) check(
 ) (packet t.PacketIn, result ParseResult) {
 
 	if beforeSpace == p.cmd {
-		if !p.params && afterSpace == "" {
+		if p.params && afterSpace == "" {
 			return packet, MissingParameter
 		}
 		return t.PacketIn{Type: p.packetType, Path: afterSpace, ClientId: clientId }, Ok
@@ -61,15 +61,15 @@ func (p cmdParserBuilder) build() cmdParser {
 
 var clientCmdParsers = []cmdParser{
 	cmdFor("End", t.End).withNoParams().build(),
-	cmdFor("List", t.List).build(),
-	cmdFor("Get", t.Get).withNoParams().build(),
+	cmdFor("List", t.List).withNoParams().build(),
+	cmdFor("Get", t.Get).build(),
 	cmdFor("Cd", t.Cd).build(),
 }
 
 var adminCmdParsers = []cmdParser{
 	cmdFor("End", t.End).withNoParams().build(),
 	cmdFor("Terminate", t.Terminate).withNoParams().build(),
-	cmdFor("List", t.List).build(),
+	cmdFor("List", t.List).withNoParams().build(),
 	cmdFor("Cd", t.Cd).withNoParams().build(),
 	cmdFor("Hide", t.Hide).build(),
 	cmdFor("Reveal", t.Reveal).build(),
@@ -95,7 +95,7 @@ func Parse(
 
 	var beforeSpace, afterSpace string
 	if spaceIndex == -1 {
-		beforeSpace = line
+		beforeSpace = line[:len(line) - 1]
 		afterSpace = ""
 	} else {
 		beforeSpace = line[:spaceIndex]

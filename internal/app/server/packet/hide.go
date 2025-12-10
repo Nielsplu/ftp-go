@@ -1,44 +1,34 @@
 package packet
 
 import (
-	t "ftp/internal/app/server/types"
+	"ftp/internal/app/server/hide"
 	"log/slog"
-	"os"
-	"fmt"
-	"bufio"
+
+	t "ftp/internal/app/server/types"
 )
 
-func PerformeHide(path string, responseChan chan t.PacketOut) {
-	
-}
+func PerformeHide(
+	path string, 
+	responseChan chan t.PacketOut, 
+	rootPath string, 
+	hiddenFiles hide.HiddenFileCollection,
+) {
 
-func CreateArrayOfHidenFile(/*file string*/) /*[]string*/{
-	dir, err := os.Getwd()
-	if err != nil {
-		slog.Error(err.Error())
+	if /*path == "." || path == "/" ||*/ len(path) <= 1 || path[len(path) - 1] == '\n' {
+		responseChan <- t.PacketOut{Buffer: []byte("File Unknown\n")}
+		return
 	}
 
-	dir += "/../../internal/app/server/"
+	if path[0] == '/' {
+		path = path[1:]
+	}
 
-	file, err := os.Open(dir + "hidden_file.txt")
-	if err != nil {
-        slog.Error(err.Error())
-		return
-    }
+	slog.Debug(rootPath + path)
+	hiddenFiles.HidePath(rootPath + path)
 
-    defer file.Close()
-
-    scanner := bufio.NewScanner(file)
-
-    for scanner.Scan() {
-        line := scanner.Text()
-        fmt.Println(line)
-    }
-
-	fmt.Println("here")
-    if err := scanner.Err(); err != nil {
-        slog.Error(err.Error())
-		return
-    }
+	responseChan <- t.PacketOut{Buffer: []byte("Ok\n")}
 	
 }
+
+
+
