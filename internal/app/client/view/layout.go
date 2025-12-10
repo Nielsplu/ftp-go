@@ -57,10 +57,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 
-		// check exit
+	
+		// check exit and clear 
 		switch msg.String() {
         case "ctrl+c", "esc":
             return m, func() tea.Msg { return cmd.FtpCmd{ Value: "End"} }
+		case "ctrl+l":
+			m.log.Items = []log.LogMsg{}
+			
         }
 
 		// update cmd
@@ -131,6 +135,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case cmd.FtpCmd:
+
+		if msg.Value == "clear" {
+			m.log.Items = []log.LogMsg{}
+			break
+		}
 
 		// send ftp commande 
 		m.cmdOutChan <- msg.Value
