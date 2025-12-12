@@ -7,6 +7,7 @@ import (
 	"ftp/internal/pkg/utils"
 	"log/slog"
 	"net"
+	"time"
 )
 
 func Handle(
@@ -16,10 +17,12 @@ func Handle(
 	packetInChan chan t.PacketIn,
 	stopper *utils.Stopper,
 ) bool {
-
+	
 
 	id := utils.MakeId()
 	packetOutChan := make(chan t.PacketOut, 10)
+
+	resetTimerChan := make(chan struct{}, 10)
 
 	// notify app that new conn as started
 	internalConnActionChan <- t.NewConn { 
@@ -43,7 +46,7 @@ func Handle(
 	// create writer goroutine with priority
 	stopper.Go(func(child *utils.Stopper) {
 		
-		err := StartWriter(conn, packetOutChan, packetInChan, child)
+		err := StartWriter(conn, packetOutChan, packetInChan, child, resetTimerChan)
 
 		// send error if reader 
 		// hasn't send one yet
@@ -55,6 +58,11 @@ func Handle(
 
 	reader := bufio.NewReader(conn)
 	lineChan := make(chan string, 1)
+
+	timeoutDuration := 60 * time.Second
+    timer := time.NewTimer(timeoutDuration)
+
+	defer timer.Stop()
 
 	for {
 
@@ -79,6 +87,32 @@ func Handle(
 		})
 
 		select {
+
+		case <-timer.C:
+            // time whithout activity
+            stopper.StopChilds()
+            slog.Debug("Conn shutdown (due to inactivity)")
+            
+            // say connection end
+            internalConnActionChan <- t.ConnEnd { Id: id }
+            return false
+
+		case <- resetTimerChan:
+
+			// stop the timer.
+			if !timer.Stop() {
+
+				// try receive timer signal
+				// if it hs been send while
+				// writing line (not blocking)
+                select {
+                case <-timer.C:
+                default:
+                }
+            }
+
+			timer.Reset(timeoutDuration)
+
 		case <-stopper.WaitForStopRequest():
 
 			// stop writer and reader
@@ -97,6 +131,19 @@ func Handle(
 			return false
 
 		case line := <-lineChan:
+
+			// we stop timer.
+			if !timer.Stop() {
+				// try receive timer signal
+				// if it hs been send while
+				// reading line (not blocking)
+                select {
+                case <-timer.C:
+                default:
+                }
+            }
+
+			timer.Reset(timeoutDuration)
 
 			packetIn, err := packet.Parse(line, admin, id)
 			if err != nil {

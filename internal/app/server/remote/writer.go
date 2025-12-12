@@ -11,6 +11,7 @@ func StartWriter(
 	packetOutChan chan t.PacketOut, 
 	packetInChan chan t.PacketIn,
 	stopper *utils.Stopper,
+	resetTimerChan chan struct{},
 ) error {
 
 	defer conn.Close()
@@ -52,6 +53,8 @@ func StartWriter(
 			if (err != nil) {
 				return err
 			}
+
+			resetTimerChan <- struct{}{}
 
 		case packet := <-packetOutChan:
 
