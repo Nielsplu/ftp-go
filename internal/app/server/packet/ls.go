@@ -11,6 +11,7 @@ import (
 type fileEntry struct {
 	filePath string
 	fileSize int64
+	isDir    bool
 }
 
 func PerformeList(
@@ -33,7 +34,11 @@ func PerformeList(
 
 	// format packet
 	for _, entry := range arrayFileEntry {
-		packetStr += fmt.Sprintf("%s %d\n", entry.filePath, entry.fileSize)
+		if entry.isDir {
+			packetStr += fmt.Sprintf("%s/\n", entry.filePath)
+		}else {
+			packetStr += fmt.Sprintf("%s %d\n", entry.filePath, entry.fileSize)
+		}
 	}
 
 	responseChan <- t.PacketOut{ Buffer: []byte(packetStr) }
@@ -57,7 +62,7 @@ func readDir(
 
 		info, _ := file.Info()
 		if !hiddenFiles.IsPathHidden(clientVisibleDirPath + "/" + file.Name()){
-			fileEntries = append(fileEntries, fileEntry{ file.Name(), info.Size() })
+			fileEntries = append(fileEntries, fileEntry{ file.Name(), info.Size(), file.IsDir() })
 		}
 
 	}

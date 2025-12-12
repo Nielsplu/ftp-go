@@ -61,6 +61,15 @@ func performeChunkFile(
 		return
 	}
 
+	// create or empty already existing file
+	file, err := os.OpenFile("downloads/" + fileName, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0644)
+	if err != nil {
+		inChan <- log.AddLog(log.Sys, "Unable to create file " + fileName)
+		return
+	}
+
+	defer file.Close()
+
 	// register filechunk
 	(*chunkFileMap)[id] = ChunkFileTransfer{
 		id: id, fileSize: fileSize, fileName: fileName,

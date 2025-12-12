@@ -24,10 +24,12 @@ func Handle(
 
 	resetTimerChan := make(chan struct{}, 10)
 
+	slog.Info("New client connected : " + conn.LocalAddr().String() + " with id : " + id)
+
 	// notify app that new conn as started
 	internalConnActionChan <- t.NewConn { 
-		Id: id,
 		Client: t.Client{
+			Id: id,
 			CurrentPath: "/",
 			PacketOutChan: packetOutChan,
 		},
@@ -91,7 +93,7 @@ func Handle(
 		case <-timer.C:
             // time whithout activity
             stopper.StopChilds()
-            slog.Debug("Conn shutdown (due to inactivity)")
+            slog.Debug("Conn shutdown (due to inactivity) : " + id)
             
             // say connection end
             internalConnActionChan <- t.ConnEnd { Id: id }
@@ -117,14 +119,14 @@ func Handle(
 
 			// stop writer and reader
 			stopper.StopChilds()
-			slog.Debug("Conn shutdown (order)")
+			slog.Debug("Conn shutdown (order) " + conn.LocalAddr().String())
 			return true
 
 		case err := <-ioErrorChan:
 
 			// stop writer and reader
 			stopper.StopChilds()
-			slog.Error("Conn shutdown with error : " + err.Error())
+			slog.Error("Conn shutdown with error : " + err.Error() + " (" + id + ")")
 
 			// notify core that conn has ended
 			internalConnActionChan <- t.ConnEnd { Id: id }
@@ -161,7 +163,7 @@ func Handle(
 
 				// stop writer and reader
 				stopper.StopChilds()
-				slog.Debug("Conn shutdown (End requested)")
+				slog.Debug("Conn shutdown (End requested) : " + id)
 
 				// notify core that conn has ended
 				internalConnActionChan <- t.ConnEnd { Id: id }

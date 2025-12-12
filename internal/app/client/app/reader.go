@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"ftp/internal/app/client/packet"
+	"ftp/internal/app/client/view/log"
 	"ftp/internal/pkg/utils"
 	"net"
 
@@ -22,6 +23,8 @@ func StartReader(
 	lineChan := make(chan string, 1)
 
 	chunkFileMap := make(map[string]packet.ChunkFileTransfer, 0)
+
+	nextLineToPrint := 0
 
 	for {
 
@@ -43,14 +46,24 @@ func StartReader(
 		
 		case line := <-lineChan:
 
+			if nextLineToPrint > 0 {
+				inChan <- log.AddLog(log.Srv, line[:len(line) - 1])
+				nextLineToPrint -= 1
+
+				if nextLineToPrint == 0 {
+					outChan <- "OK"
+				}
+				continue
+			}
+
 			if line == "End\n" {
 				inChan <- tea.Quit()
 				connEndChan <- struct{}{}
 				println("Connection terminée par le serveur")
 				return
 			}
-
-			packet.Performe(line, reader, inChan, outChan, ioErrorChan, &chunkFileMap)
+			
+			nextLineToPrint = packet.Performe(line, reader, inChan, outChan, ioErrorChan, &chunkFileMap)
 		}
 	}
 }

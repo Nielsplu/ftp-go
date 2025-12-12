@@ -40,7 +40,7 @@ func Start(config t.ServerConfig) {
 			switch connAction := connAction.(type) {
 			case t.NewConn:
 
-				state.Clients[connAction.Id] = &connAction.Client
+				state.Clients[connAction.Client.Id] = &connAction.Client
 				slog.Info(fmt.Sprintf("%d clients connected", len(state.Clients)))
 
 			case t.ConnEnd:

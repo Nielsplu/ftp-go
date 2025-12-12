@@ -38,6 +38,8 @@ func PerformeGet(
 		return
 	}
 
+	slog.Info("client " + client.Id + " GET " + fileChecked.clientVisiblePath)
+
 	//choose the transfer style
 	if info.Size() < 20*1_000_000 {
 		sendInOnePacket(file, info, path, responseChan)

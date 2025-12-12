@@ -1,7 +1,6 @@
 package types
 
 type NewConn struct {
-	Id     string
 	Client Client
 }
 

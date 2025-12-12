@@ -59,5 +59,6 @@ func performeStart(
 	}
 
 	inChan <- progressbar.SetProgressFor(filePath, 1)
+	inChan <- log.AddLog(log.Sys, "File transfer finished : " + filePath)
 	outChan <- "OK"
 }

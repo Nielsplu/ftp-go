@@ -1,6 +1,6 @@
 package types
 
 type Client struct {
-	CurrentPath   string
-	PacketOutChan chan PacketOut
+	Id, CurrentPath string
+	PacketOutChan   chan PacketOut
 }
