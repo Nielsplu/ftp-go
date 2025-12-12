@@ -59,7 +59,7 @@ func Handle(
 	reader := bufio.NewReader(conn)
 	lineChan := make(chan string, 1)
 
-	timeoutDuration := 5 * time.Second
+	timeoutDuration := time.Minute
     timer := time.NewTimer(timeoutDuration)
 
 	defer timer.Stop()
