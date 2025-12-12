@@ -16,11 +16,10 @@ type fileEntry struct {
 func PerformeList(
 	path string, 
 	responseChan chan t.PacketOut, 
-	rootPath string, 
-	hiddenFiles hide.HiddenFileCollection,
+	state t.ServerState,
 ) {
 
-	arrayFileEntry := readFile(rootPath + path, hiddenFiles)
+	arrayFileEntry := readFile(state.Config.RootPath + path, state.HiddenFiles)
 	fileCnt := len(arrayFileEntry)
 
 	packetStr := fmt.Sprintf("FileCnt %d\n", fileCnt)

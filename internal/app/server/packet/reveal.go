@@ -2,16 +2,14 @@ package packet
 
 import (
 	t "ftp/internal/app/server/types"
-	"ftp/internal/app/server/hide"
 )
 
 func PerformeReveal(
 	path string, 
 	responseChan chan t.PacketOut, 
-	rootPath string,
-	hiddenFiles hide.HiddenFileCollection,
+	state t.ServerState,
 ) {
-	if !hiddenFiles.IsPathHidden(path){
+	if !state.HiddenFiles.IsPathHidden(path){
 		responseChan <- t.PacketOut{Buffer: []byte("File Not Hidden\n")}
 	}
 
@@ -19,7 +17,7 @@ func PerformeReveal(
 		path = path[1:]
 	}
 	
-	hiddenFiles.RevealPath(rootPath + path)
+	state.HiddenFiles.RevealPath(state.Config.RootPath + path)
 
 	responseChan <- t.PacketOut{Buffer: []byte("Ok\n")}
 }

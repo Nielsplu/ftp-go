@@ -5,7 +5,7 @@ import t "ftp/internal/app/server/types"
 func PerformeCd(
 	path string, 
 	responseChan chan t.PacketOut, 
-	rootPath string,
+	state t.ServerState,
 	client *t.Client,
 ) {
 
@@ -19,15 +19,13 @@ func PerformeCd(
 		path = client.CurrentPath + "/" + path
 	}
 
-	cleanPath, err := checkPath(rootPath, path)
+	cleanPath, err := checkPath(state.Config.RootPath, path)
 	if err != nil {
 		responseChan <- t.PacketOut{ Buffer: []byte("FileUnknown\n") }
 		return
 	}
 
-	clientVisiblePath := cleanPath[len(rootPath):]
-
-	client.CurrentPath = clientVisiblePath
-	responseChan <- t.PacketOut{ Buffer: []byte("Moveto " + clientVisiblePath + "\n") }
+	client.CurrentPath = cleanPath
+	responseChan <- t.PacketOut{ Buffer: []byte("Moveto " + cleanPath + "\n") }
 
 }

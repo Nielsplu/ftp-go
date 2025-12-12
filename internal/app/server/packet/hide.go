@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"ftp/internal/app/server/hide"
 	"log/slog"
 
 	t "ftp/internal/app/server/types"
@@ -10,8 +9,7 @@ import (
 func PerformeHide(
 	path string, 
 	responseChan chan t.PacketOut, 
-	rootPath string, 
-	hiddenFiles hide.HiddenFileCollection,
+	state t.ServerState,
 ) {
 
 	if /*path == "." || path == "/" ||*/ len(path) <= 1 || path[len(path) - 1] == '\n' {
@@ -23,8 +21,8 @@ func PerformeHide(
 		path = path[1:]
 	}
 
-	slog.Debug(rootPath + path)
-	hiddenFiles.HidePath(rootPath + path)
+	slog.Debug(state.Config.RootPath + path)
+	state.HiddenFiles.HidePath(state.Config.RootPath + path)
 
 	responseChan <- t.PacketOut{Buffer: []byte("Ok\n")}
 	

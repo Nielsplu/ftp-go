@@ -27,5 +27,5 @@ func checkPath(rootPath, path string) (s string, err error) {
 		return s, errors.New("trying to escape root dir")
 	}
 
-	return cleanPath, nil
+	return cleanPath[len(absRoot):], nil
 }
