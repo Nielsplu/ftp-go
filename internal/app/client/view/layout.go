@@ -134,6 +134,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if msg.Percent >= 1 {
 					cmds = append(cmds, func() tea.Msg {
 						time.Sleep(time.Second)
+
 						return removeProgressBar(msg.Filename)
 					})
 				}

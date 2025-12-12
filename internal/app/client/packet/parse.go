@@ -26,6 +26,7 @@ func Performe(
 	line string,
 	reader *bufio.Reader,
 	inChan chan tea.Msg,
+	outChan chan string,
 	ioErrorChan chan error,
 	chunkFileMap *map[string]ChunkFileTransfer,
 ) {
@@ -33,7 +34,7 @@ func Performe(
 	switch line {
 	case "Start\n":
 
-		performeStart(reader, inChan, ioErrorChan)
+		performeStart(reader, inChan, outChan, ioErrorChan)
 		return
 
 	case "Chunkfile\n":
@@ -43,7 +44,7 @@ func Performe(
 
 	case "Chunk\n":
 
-		performeChunk(reader, inChan, ioErrorChan, chunkFileMap)
+		performeChunk(reader, inChan, outChan, ioErrorChan, chunkFileMap)
 		return
 
 	}

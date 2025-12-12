@@ -15,6 +15,7 @@ import (
 func performeStart(
 	reader *bufio.Reader,
 	inChan chan tea.Msg,
+	outChan chan string,
 	ioErrorChan chan error,
 ) {
 	strRead, err := reader.ReadString('\n')
@@ -58,4 +59,5 @@ func performeStart(
 	}
 
 	inChan <- progressbar.SetProgressFor(filePath, 1)
+	outChan <- "OK\n"
 }

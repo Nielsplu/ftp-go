@@ -73,6 +73,7 @@ func performeChunkFile(
 func performeChunk(
 	reader *bufio.Reader,
 	inChan chan tea.Msg,
+	outChan chan string,
 	ioErrorChan chan error,
 	chunkFileMap *map[string]ChunkFileTransfer,
 ) {
@@ -139,6 +140,7 @@ func performeChunk(
 		percent = float64(sizeAfter) / float64(chunkFileTransfer.fileSize)
 	} else {
 		inChan <- log.AddLog(log.Sys, "File transfer finished : " + chunkFileTransfer.fileName)
+		outChan <- "Ok\n"
 		percent = 1
 	}
 

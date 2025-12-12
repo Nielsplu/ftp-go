@@ -12,6 +12,7 @@ import (
 func StartReader(
 	conn 		net.Conn,
 	inChan 		chan tea.Msg,
+	outChan		chan string,
 	ioErrorChan chan error,
 	connEndChan chan struct{},
 	stopper 	*utils.Stopper,
@@ -49,7 +50,7 @@ func StartReader(
 				return
 			}
 
-			packet.Performe(line, reader, inChan, ioErrorChan, &chunkFileMap)
+			packet.Performe(line, reader, inChan, outChan, ioErrorChan, &chunkFileMap)
 		}
 	}
 }

@@ -18,7 +18,7 @@ func Handle(
 	stopper := utils.NewStopper()
 
 	stopper.Go(func(child *utils.Stopper) {
-		StartReader(conn, inChan, ioErrorChan, stopper.WaitForStopRequest(), child)
+		StartReader(conn, inChan, outChan, ioErrorChan, stopper.WaitForStopRequest(), child)
 	})
 
 	stopper.Go(func(child *utils.Stopper) {
