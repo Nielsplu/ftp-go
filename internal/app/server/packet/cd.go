@@ -19,13 +19,13 @@ func PerformeCd(
 		path = client.CurrentPath + "/" + path
 	}
 
-	cleanPath, err := checkPath(state.Config.RootPath, path)
-	if err != nil {
+	fileChecked, err := checkPath(state.Config.RootPath, path)
+	if err != nil || !fileChecked.isDir {
 		responseChan <- t.PacketOut{ Buffer: []byte("FileUnknown\n") }
 		return
 	}
 
-	client.CurrentPath = cleanPath
-	responseChan <- t.PacketOut{ Buffer: []byte("Moveto " + cleanPath + "\n") }
+	client.CurrentPath = fileChecked.clientPath
+	responseChan <- t.PacketOut{ Buffer: []byte("Moveto " + fileChecked.clientPath + "\n") }
 
 }

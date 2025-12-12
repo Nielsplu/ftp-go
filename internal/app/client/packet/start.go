@@ -2,7 +2,6 @@ package packet
 
 import (
 	"bufio"
-	"fmt"
 	"ftp/internal/app/client/view"
 	"ftp/internal/app/client/view/log"
 	"ftp/internal/app/client/view/progressbar"
@@ -54,8 +53,7 @@ func performeStart(
 
 	bytesCopied, err := io.CopyN(destFile, reader, int64(fileSize))
 	if err != nil || bytesCopied != int64(fileSize) {
-		inChan <- log.AddLog(log.Sys, "Erreur lors du teléchargement du fichier : "+filePath)
-		inChan <- log.AddLog(log.Sys, fmt.Sprintf("%d et %d", ))
+		inChan <- log.AddLog(log.Sys, "Erreur lors du teléchargement du fichier : " + filePath)
 		return
 	}
 

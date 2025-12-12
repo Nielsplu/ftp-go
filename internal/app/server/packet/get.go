@@ -16,14 +16,14 @@ func PerformeGet(
 	stopper *utils.Stopper,
 ) {
 
-	cleanPath, err := checkPath(state.Config.RootPath, path)
-	if err != nil {
+	fileChecked, err := checkPath(state.Config.RootPath, path)
+	if err != nil || fileChecked.isDir {
 		responseChan <- t.PacketOut{ Buffer: []byte("FileUnknown\n") }
 		return
 	}
 
 	//open file
-	file, err := os.Open(cleanPath)
+	file, err := os.Open(fileChecked.absPath)
 	if err != nil {
 		responseChan <- t.PacketOut{Buffer: []byte("FileUnknown\n")}
 		return
@@ -31,7 +31,7 @@ func PerformeGet(
 
 	//file info
 	info, err := file.Stat()
-	if err != nil || info.IsDir() {
+	if err != nil {
 		responseChan <- t.PacketOut{Buffer: []byte("FileUnknown\n")}
 		file.Close()
 		return
