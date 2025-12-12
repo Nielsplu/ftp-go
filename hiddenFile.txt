@@ -1,2 +1,0 @@
-data/zub.txt
-data/important

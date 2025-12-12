@@ -59,5 +59,5 @@ func performeStart(
 	}
 
 	inChan <- progressbar.SetProgressFor(filePath, 1)
-	outChan <- "OK\n"
+	outChan <- "OK"
 }

@@ -16,53 +16,51 @@ type fileEntry struct {
 func PerformeList(
 	path string, 
 	responseChan chan t.PacketOut, 
-	state t.ServerState,
+	state *t.ServerState,
+	client *t.Client,
 ) {
 
-	arrayFileEntry := readFile(state.Config.RootPath + path, state.HiddenFiles)
+	checkFile, err := checkPath(state, client.CurrentPath, path)
+	if err != nil || !checkFile.isDir || checkFile.isHidden {
+		responseChan <- t.PacketOut{ Buffer: []byte("FileUnknown\n") }
+		return
+	}
+
+	arrayFileEntry := readDir(checkFile.absPath, checkFile.clientVisiblePath, state.HiddenFiles)
 	fileCnt := len(arrayFileEntry)
 
 	packetStr := fmt.Sprintf("FileCnt %d\n", fileCnt)
 
-	// add line per line the Name 
-	// and the Size of the file
+	// format packet
 	for _, entry := range arrayFileEntry {
 		packetStr += fmt.Sprintf("%s %d\n", entry.filePath, entry.fileSize)
 	}
 
-	responseChan <- t.PacketOut{Buffer: []byte(packetStr)}
+	responseChan <- t.PacketOut{ Buffer: []byte(packetStr) }
 }
 
-func readFile(path string, hiddenFiles hide.HiddenFileCollection) []fileEntry {
+func readDir(
+	dirAbsPath, clientVisibleDirPath string, 
+	hiddenFiles hide.HiddenFileCollection,
+) []fileEntry {
 
 	// open the file and get data
-	data, err := os.ReadDir(path)
-
+	data, err := os.ReadDir(dirAbsPath)
 	if err != nil {
-
 		slog.Error(err.Error())
 		return []fileEntry{}
 	}
 
-	var arrayDirectory []fileEntry
+	// fill arrayDirectory
+	var fileEntries []fileEntry
+	for _, file := range data {
 
-	if path[len(path) - 1] != '/'{
-		path += "/"
-	}
-
-	// add to arrayDirectory the Name and the Size 
-	// of the file not in hiddenFiles
-	for _, fichier := range data {
-
-		info, _ := fichier.Info()
-
-		if !hiddenFiles.IsPathHidden(path + fichier.Name()){
-
-			fileEntry := fileEntry{fichier.Name(), info.Size()}
-
-			arrayDirectory = append(arrayDirectory, fileEntry)
+		info, _ := file.Info()
+		if !hiddenFiles.IsPathHidden(clientVisibleDirPath + "/" + file.Name()){
+			fileEntries = append(fileEntries, fileEntry{ file.Name(), info.Size() })
 		}
+
 	}
 
-	return arrayDirectory
+	return fileEntries
 }

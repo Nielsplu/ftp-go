@@ -7,7 +7,7 @@ type ServerConfig struct {
 }
 
 type ServerState struct {
-	Clients map[string]Client
+	Clients map[string]*Client
 	Config  ServerConfig
 	HiddenFiles hide.HiddenFileCollection
 }

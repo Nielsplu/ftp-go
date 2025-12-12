@@ -7,17 +7,17 @@ import (
 func PerformeReveal(
 	path string, 
 	responseChan chan t.PacketOut, 
-	state t.ServerState,
+	state *t.ServerState,
+	client *t.Client,
 ) {
-	if !state.HiddenFiles.IsPathHidden(path){
-		responseChan <- t.PacketOut{Buffer: []byte("File Not Hidden\n")}
+
+	fileChecked, err := checkPath(state, client.CurrentPath, path)
+	if err != nil {
+		responseChan <- t.PacketOut{Buffer: []byte("FileUnknown\n")}
+		return 
 	}
 
-	if path[0] == '/' {
-		path = path[1:]
-	}
-	
-	state.HiddenFiles.RevealPath(state.Config.RootPath + path)
+	state.HiddenFiles.RevealPath(fileChecked.clientVisiblePath)
+	responseChan <- t.PacketOut{ Buffer: []byte("Ok\n") }
 
-	responseChan <- t.PacketOut{Buffer: []byte("Ok\n")}
 }

@@ -6,27 +6,37 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	t "ftp/internal/app/server/types"
 )
 
 type fileChecked struct {
-	clientPath, absPath string
-	isDir				bool
+	clientVisiblePath, absPath string
+	isDir, isHidden	    	   bool
 }
 
-func checkPath(rootPath, path string) (f fileChecked, err error) {
+func checkPath(state *t.ServerState, clientPath, path string) (f fileChecked, err error) {
 
 	//get the absolute path
-	absRoot, err := filepath.Abs(rootPath)
+	absRoot, err := filepath.Abs(state.Config.RootPath)
 	if err != nil {
 		slog.Error("Invalid root path")
 		return
 	}
 
 	//get the path
-	fullPath := filepath.Join(absRoot, path)
+	var fullPath string
+	if len(path) > 0 && path[0] == '/' {
+		fullPath = filepath.Join(absRoot, path)
+	}else {
+		fullPath = filepath.Join(absRoot, clientPath, path)
+	}
 
 	//clean path
-	cleanPath := filepath.Clean(fullPath)
+	cleanPath, err := filepath.Abs(filepath.Clean(fullPath))
+	if err != nil {
+		slog.Error("error getting abs path")
+		return
+	}
 
 	// check if trying to escape root dir
 	if !strings.HasPrefix(cleanPath, absRoot) {
@@ -40,9 +50,11 @@ func checkPath(rootPath, path string) (f fileChecked, err error) {
 		return f, errors.New("file doesn't exist")
 	}
 
+	clientVisiblePath := cleanPath[len(absRoot):]
 	return fileChecked{
-		clientPath: cleanPath[len(absRoot):],
+		clientVisiblePath: clientVisiblePath,
 		absPath: cleanPath,
 		isDir: fileSate.IsDir(),
+		isHidden: state.HiddenFiles.IsPathHidden(clientVisiblePath),
 	}, nil
 }

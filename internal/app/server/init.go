@@ -27,7 +27,7 @@ func Start(config t.ServerConfig) {
 	})
 
 	state := t.ServerState {
-		Clients: make(map[string]t.Client),
+		Clients: make(map[string]*t.Client),
 		Config: config,
 		HiddenFiles: hide.ReadFromFile("hiddenFile.txt"),
 	}
@@ -40,7 +40,7 @@ func Start(config t.ServerConfig) {
 			switch connAction := connAction.(type) {
 			case t.NewConn:
 
-				state.Clients[connAction.Id] = connAction.Client
+				state.Clients[connAction.Id] = &connAction.Client
 				slog.Info(fmt.Sprintf("%d clients connected", len(state.Clients)))
 
 			case t.ConnEnd:
@@ -62,23 +62,23 @@ func Start(config t.ServerConfig) {
 
 			case t.List:
 				
-				packet.PerformeList(packetIn.Path, client.PacketOutChan, state)
+				packet.PerformeList(packetIn.Path, client.PacketOutChan, &state, client)
 
 			case t.Get:
 
-				packet.PerformeGet(packetIn.Path, client.PacketOutChan, state, mainStopper)
+				packet.PerformeGet(packetIn.Path, client.PacketOutChan, &state, client, mainStopper)
 
 			case t.Hide:
 
-				packet.PerformeHide(packetIn.Path, client.PacketOutChan, state)
+				packet.PerformeHide(packetIn.Path, client.PacketOutChan, &state, client)
 
 			case t.Reveal:
 
-				packet.PerformeReveal(packetIn.Path, client.PacketOutChan, state)
+				packet.PerformeReveal(packetIn.Path, client.PacketOutChan, &state, client)
 
 			case t.Cd:
 
-				packet.PerformeCd(packetIn.Path, client.PacketOutChan, state, &client)
+				packet.PerformeCd(packetIn.Path, client.PacketOutChan, &state, client)
 
 			case t.Terminate:
 

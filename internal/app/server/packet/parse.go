@@ -3,7 +3,6 @@ package packet
 import (
 	"errors"
 	t "ftp/internal/app/server/types"
-	"log/slog"
 	"strings"
 )
 
@@ -23,14 +22,13 @@ type cmdParser struct {
 
 func (p cmdParser) check(
 	beforeSpace, afterSpace string,
-	clientId string,
 ) (packet t.PacketIn, result ParseResult) {
 
 	if beforeSpace == p.cmd {
 		if p.params && afterSpace == "" {
 			return packet, MissingParameter
 		}
-		return t.PacketIn{Type: p.packetType, Path: afterSpace, ClientId: clientId }, Ok
+		return t.PacketIn{Type: p.packetType, Path: afterSpace }, Ok
 	}
 
 	return
@@ -78,10 +76,7 @@ var adminCmdParsers = []cmdParser{
 func Parse(
 	line string,
 	admin bool,
-	clientId string,
 ) (t.PacketIn, error) {
-
-	slog.Debug(line)
 
 	var cmdParsers []cmdParser
 	if admin {
@@ -105,7 +100,7 @@ func Parse(
 	}
 
 	for _, cmdParser := range cmdParsers {
-		packetIn, result := cmdParser.check(beforeSpace, afterSpace, clientId)
+		packetIn, result := cmdParser.check(beforeSpace, afterSpace)
 		switch result {
 		case Ok:
 			return packetIn, nil

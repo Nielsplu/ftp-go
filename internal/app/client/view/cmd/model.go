@@ -34,7 +34,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case ChangeDirMsg:
 		m.path = msg.To
-		m.textInput.Prompt = m.path + " $ "
+		m.textInput.Prompt = m.path + "/ $ "
 		return m, nil
 
 	case tea.KeyMsg:

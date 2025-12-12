@@ -140,7 +140,7 @@ func performeChunk(
 		percent = float64(sizeAfter) / float64(chunkFileTransfer.fileSize)
 	} else {
 		inChan <- log.AddLog(log.Sys, "File transfer finished : " + chunkFileTransfer.fileName)
-		outChan <- "Ok\n"
+		outChan <- "OK"
 		percent = 1
 	}
 

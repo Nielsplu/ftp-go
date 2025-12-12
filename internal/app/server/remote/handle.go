@@ -59,7 +59,7 @@ func Handle(
 	reader := bufio.NewReader(conn)
 	lineChan := make(chan string, 1)
 
-	timeoutDuration := 60 * time.Second
+	timeoutDuration := 5 * time.Second
     timer := time.NewTimer(timeoutDuration)
 
 	defer timer.Stop()
@@ -132,11 +132,10 @@ func Handle(
 
 		case line := <-lineChan:
 
-			// we stop timer.
+			// reset timer.
 			if !timer.Stop() {
-				// try receive timer signal
-				// if it hs been send while
-				// reading line (not blocking)
+				// receive (not blocking) timer signal
+				// like it has been send while reading line
                 select {
                 case <-timer.C:
                 default:
@@ -145,7 +144,13 @@ func Handle(
 
 			timer.Reset(timeoutDuration)
 
-			packetIn, err := packet.Parse(line, admin, id)
+			// ignore Ok
+			if line == "OK\n" {
+				continue
+			}
+
+			// parse cmd
+			packetIn, err := packet.Parse(line, admin)
 			if err != nil {
 				packetOutChan <- t.PacketOut{ Buffer: []byte(err.Error() + "\n") }
 				slog.Debug("Parse error : " + err.Error())
@@ -163,12 +168,7 @@ func Handle(
 				return false
 			}
 
-			if packetIn.Type == t.Cd {
-			
-
-
-			}
-
+			packetIn.ClientId = id
 			packetInChan <- packetIn
 		}
 	}

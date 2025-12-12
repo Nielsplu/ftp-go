@@ -12,12 +12,13 @@ import (
 func PerformeGet(
 	path string,
 	responseChan chan t.PacketOut,
-	state t.ServerState,
+	state *t.ServerState,
+	client *t.Client,
 	stopper *utils.Stopper,
 ) {
 
-	fileChecked, err := checkPath(state.Config.RootPath, path)
-	if err != nil || fileChecked.isDir {
+	fileChecked, err := checkPath(state, client.CurrentPath, path)
+	if err != nil || fileChecked.isDir || fileChecked.isHidden {
 		responseChan <- t.PacketOut{ Buffer: []byte("FileUnknown\n") }
 		return
 	}
