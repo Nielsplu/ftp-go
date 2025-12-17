@@ -2,12 +2,13 @@ package server
 
 import (
 	"fmt"
+	"ftp/internal/app/server/hide"
 	"ftp/internal/app/server/packet"
 	"ftp/internal/app/server/remote"
-	"ftp/internal/app/server/hide"
 	t "ftp/internal/app/server/types"
 	"ftp/internal/pkg/utils"
 	"log/slog"
+	"time"
 )
 
 func Start(config t.ServerConfig) {
@@ -82,8 +83,16 @@ func Start(config t.ServerConfig) {
 
 			case t.Terminate:
 
+				// stop all child
 				mainStopper.StopChilds()
+
+				// close last conn (sending Ok)
+				close(client.PacketOutChan)
+				
+				// greatings
 				println("Bye bye !")
+				time.Sleep(time.Second)
+
 				return
 
 			default:

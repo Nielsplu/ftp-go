@@ -17,7 +17,6 @@ func Handle(
 	packetInChan chan t.PacketIn,
 	stopper *utils.Stopper,
 ) bool {
-	
 
 	id := utils.MakeId()
 	packetOutChan := make(chan t.PacketOut, 10)
@@ -63,7 +62,6 @@ func Handle(
 
 	timeoutDuration := time.Minute
     timer := time.NewTimer(timeoutDuration)
-
 	defer timer.Stop()
 
 	for {
@@ -169,9 +167,16 @@ func Handle(
 				internalConnActionChan <- t.ConnEnd { Id: id }
 				return false
 			}
-
+			
+			isTerminate := packetIn.Type == t.Terminate
 			packetIn.ClientId = id
 			packetInChan <- packetIn
+
+			if isTerminate {
+				slog.Debug("Don't close writer before sending last Ok")
+				return true
+			}
+			
 		}
 	}
 }
