@@ -61,7 +61,7 @@ var clientCmdParsers = []cmdParser{
 	cmdFor("End", t.End).withNoParams().build(),
 	cmdFor("List", t.List).withNoParams().build(),
 	cmdFor("Get", t.Get).build(),
-	cmdFor("Cd", t.Cd).build(),
+	cmdFor("Cd", t.Cd).withNoParams().build(),
 }
 
 var adminCmdParsers = []cmdParser{
