@@ -3,6 +3,7 @@ package remote
 import (
 	t "ftp/internal/app/server/types"
 	"ftp/internal/pkg/utils"
+	"log/slog"
 	"net"
 )
 
@@ -56,7 +57,18 @@ func StartWriter(
 
 			resetTimerChan <- struct{}{}
 
-		case packet := <-packetOutChan:
+		case packet, ok := <-packetOutChan:
+
+			// here, Terminate has been call 
+			// by client (this conn)
+			// reader has ended, app has stopped other 
+			// conn, this is the last signal of app 
+			// to send "Ok\n" 
+			if !ok {
+				slog.Debug("Sending last Ok")
+				conn.Write([]byte("Ok\n"))
+				return nil
+			}
 
 			if packet.LowPriority {
 				lowPriorityQueue = append(lowPriorityQueue, packet.Buffer)
