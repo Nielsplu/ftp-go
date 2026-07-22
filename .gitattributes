@@ -1,0 +1,12 @@
+# Fins de ligne normalisées : LF dans le dépôt. Indispensable pour les scripts
+# shell, qui échouent sous Linux avec des fins de ligne CRLF.
+* text=auto eol=lf
+*.sh text eol=lf
+
+# Binaires : jamais de conversion.
+*.wasm binary
+*.png  binary
+*.jpg  binary
+
+# Fichier généré.
+go.sum linguist-generated=true
