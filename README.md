@@ -55,3 +55,18 @@ Les stoppers sont utilisé par exemple dans les `Accept Loop`, un enfant par por
 __(chaque connection est divisé en un reader et un writer)__ le reader est le maître, il possède un 
 stopper pour stopper le writer et attendre sa fin.
 
+
+## Essayer dans le navigateur
+
+Le vrai serveur et le vrai client tournent en WebAssembly sur
+[le portfolio](https://nielsplu.github.io/portfolio/) (carte « Serveur et
+client FTP en Go », bouton « Tester ici ») : ils sont compilés tels quels et
+reliés par le réseau loopback en mémoire de Go, seule la vue Bubbletea est
+remplacée par la page.
+
+Pour compiler le binaire wasm :
+
+```
+cd cmd/wasm
+GOOS=js GOARCH=wasm go build -o ftp.wasm .
+```

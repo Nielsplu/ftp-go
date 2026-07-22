@@ -1,2 +1,4 @@
 cmd/client/client
 cmd/server/server
+# artefact du build WebAssembly
+cmd/wasm/ftp.wasm
